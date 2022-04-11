@@ -81,7 +81,7 @@ func main() {
 				if ip, ok := addr.(*net.IPNet); ok {
 					if ip.IP.To4() != nil {
 						sendInfo := &send{}
-						sendInfo.ips = getIPSet(ip)
+						sendInfo.ips = getIPSet(ip, *destIP)
 						sendInfo.ipNet = ip
 						sendInfo.iface = it
 						sendInfos = append(sendInfos, sendInfo)
@@ -141,7 +141,7 @@ func main() {
 				if ip, ok := addr.(*net.IPNet); ok {
 					if ip.IP.To4() != nil {
 						sendInfo := &send{}
-						sendInfo.ips = getIPSet(ip)
+						sendInfo.ips = getIPSet(ip, *destIP)
 						sendInfo.ipNet = ip
 						sendInfo.iface = it
 						sendInfo.iface.Name = interfaceName
@@ -174,7 +174,7 @@ OUTLOOP:
 		wg := &sync.WaitGroup{}
 
 		if len(sendInfo.ips) <= processNum {
-			processNum = len(sendInfo.ips)
+			interval = len(sendInfo.ips)
 		} else {
 			interval = int(math.Ceil(float64(len(sendInfo.ips)) / float64(processNum)))
 		}
@@ -216,7 +216,7 @@ OUTLOOP:
 	}
 }
 
-func getIPSet(ipNet *net.IPNet) (ipSet []net.IP) {
+func getIPSet(ipNet *net.IPNet, destIP string) (ipSet []net.IP) {
 	var ipStringSet []string
 	for ip := ipNet.IP.Mask(ipNet.Mask); ipNet.Contains(ip); nextIP(ip) {
 		if ip[len(ip)-1]&0xff == 0 {
@@ -226,7 +226,7 @@ func getIPSet(ipNet *net.IPNet) (ipSet []net.IP) {
 	}
 	for _, ipString := range ipStringSet {
 		ip := net.ParseIP(ipString)
-		if ip != nil {
+		if ip != nil && ipString == destIP {
 			ipSet = append(ipSet, ip)
 		}
 	}
